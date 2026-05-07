@@ -4,6 +4,8 @@ set -e
 GPU_IDS="${1:-2}"
 PORT="${2:-8892}"
 TENSOR_PARALLEL=$(echo "$GPU_IDS" | tr ',' '\n' | wc -l)
+GPU_TAG=$(echo "$GPU_IDS" | tr -d ',')
+CONTAINER_NAME="gemma4-fp8-gpu${GPU_TAG}-p${PORT}"
 
 MODEL_DIR="gemma-4-26B-A4B-it-FP8-Dynamic"
 HF_REPO="RedHatAI/gemma-4-26B-A4B-it-FP8-Dynamic"
@@ -18,14 +20,14 @@ if [ ! -f "./$MODEL_DIR/config.json" ]; then
     hf download "$HF_REPO" --local-dir "./$MODEL_DIR"
 fi
 
-if docker ps -a --format '{{.Names}}' | grep -q '^gemma4-fp8$'; then
-    echo "Removing existing container 'gemma4-fp8'..."
-    docker rm -f gemma4-fp8
+if docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
+    echo "Removing existing container '${CONTAINER_NAME}'..."
+    docker rm -f "${CONTAINER_NAME}"
 fi
 
-echo "Starting vLLM container 'gemma4-fp8' (GPUs: $GPU_IDS, tensor-parallel-size: $TENSOR_PARALLEL, port: $PORT)..."
+echo "Starting vLLM container '${CONTAINER_NAME}' (GPUs: $GPU_IDS, tensor-parallel-size: $TENSOR_PARALLEL, port: $PORT)..."
 docker run -d \
-    --name gemma4-fp8 \
+    --name "${CONTAINER_NAME}" \
     --gpus "\"device=$GPU_IDS\"" \
     -v "$(pwd)/$MODEL_DIR:/$MODEL_DIR" \
     -p "$PORT:8000" \
@@ -41,4 +43,4 @@ docker run -d \
     --enable-auto-tool-choice \
     --tool-call-parser gemma4
 
-echo "Container started. Logs: docker logs -f gemma4-fp8"
+echo "Container started. Logs: docker logs -f ${CONTAINER_NAME}"

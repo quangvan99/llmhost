@@ -1,2 +1,7 @@
 #!/bin/bash
-docker logs -f qwen35b
+GPU_IDS="${1:?Usage: $0 <gpu_ids> [port]  e.g.: $0 0,1,2,3 8889}"
+PORT="${2:-8889}"
+GPU_TAG=$(echo "$GPU_IDS" | tr -d ',')
+CONTAINER_NAME="qwen35b-gpu${GPU_TAG}-p${PORT}"
+
+docker logs -f "${CONTAINER_NAME}"

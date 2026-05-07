@@ -4,6 +4,8 @@ set -e
 GPU_IDS="${1:?Usage: $0 <gpu_ids> [port]  e.g.: $0 0,1,2,3 8889}"
 PORT="${2:-8889}"
 TENSOR_PARALLEL=$(echo "$GPU_IDS" | tr ',' '\n' | wc -l)
+GPU_TAG=$(echo "$GPU_IDS" | tr -d ',')
+CONTAINER_NAME="qwen35b-gpu${GPU_TAG}-p${PORT}"
 
 MODEL_DIR="Qwen3.6-35B-A3B-FP8"
 HF_REPO="Qwen/Qwen3.6-35B-A3B-FP8"
@@ -15,14 +17,14 @@ if [ ! -f "./$MODEL_DIR/config.json" ]; then
 fi
 
 # Stop and remove existing container if running
-if docker ps -a --format '{{.Names}}' | grep -q '^qwen35b$'; then
-    echo "Removing existing container 'qwen35b'..."
-    docker rm -f qwen35b
+if docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
+    echo "Removing existing container '${CONTAINER_NAME}'..."
+    docker rm -f "${CONTAINER_NAME}"
 fi
 
-echo "Starting vLLM container 'qwen35b' (GPUs: $GPU_IDS, tensor-parallel-size: $TENSOR_PARALLEL, port: $PORT)..."
+echo "Starting vLLM container '${CONTAINER_NAME}' (GPUs: $GPU_IDS, tensor-parallel-size: $TENSOR_PARALLEL, port: $PORT)..."
 docker run -d \
-    --name qwen35b \
+    --name "${CONTAINER_NAME}" \
     --gpus "\"device=$GPU_IDS\"" \
     -v "$(pwd)/$MODEL_DIR:/$MODEL_DIR" \
     -p "$PORT:8000" \
@@ -37,4 +39,4 @@ docker run -d \
     --tool-call-parser qwen3_xml \
     --reasoning-parser qwen3 \
     --default-chat-template-kwargs '{"enable_thinking": false}'
-echo "Container started. Logs: docker logs -f qwen35b"
+echo "Container started. Logs: docker logs -f ${CONTAINER_NAME}"

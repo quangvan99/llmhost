@@ -4,6 +4,8 @@ set -e
 GPU_IDS="${1:?Usage: $0 <gpu_ids> [port]  e.g.: $0 0,1,2,3 8892}"
 PORT="${2:-8892}"
 TENSOR_PARALLEL=$(echo "$GPU_IDS" | tr ',' '\n' | wc -l)
+GPU_TAG=$(echo "$GPU_IDS" | tr -d ',')
+CONTAINER_NAME="gemma4-gpu${GPU_TAG}-p${PORT}"
 
 MODEL_DIR="gemma-4-26B-A4B-it"
 MODEL_ID="google/gemma-4-26B-A4B-it"
@@ -20,14 +22,14 @@ echo "Ensuring model $MODEL_ID is fully downloaded..."
 hf download "$MODEL_ID" --local-dir "$MODEL_DIR"
 
 # Stop and remove existing container if running
-if docker ps -a --format '{{.Names}}' | grep -q '^gemma4$'; then
-    echo "Removing existing container 'gemma4'..."
-    docker rm -f gemma4
+if docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
+    echo "Removing existing container '${CONTAINER_NAME}'..."
+    docker rm -f "${CONTAINER_NAME}"
 fi
 
-echo "Starting vLLM container 'gemma4' (GPUs: $GPU_IDS, tensor-parallel-size: $TENSOR_PARALLEL, port: $PORT)..."
+echo "Starting vLLM container '${CONTAINER_NAME}' (GPUs: $GPU_IDS, tensor-parallel-size: $TENSOR_PARALLEL, port: $PORT)..."
 docker run -d \
-    --name gemma4 \
+    --name "${CONTAINER_NAME}" \
     --gpus "\"device=$GPU_IDS\"" \
     -v "$(pwd)/$MODEL_DIR:/$MODEL_DIR" \
     -p "$PORT:8000" \
@@ -40,4 +42,4 @@ docker run -d \
     --enable-auto-tool-choice \
     --tool-call-parser gemma4
 
-echo "Container started. Logs: docker logs -f gemma4"
+echo "Container started. Logs: docker logs -f ${CONTAINER_NAME}"

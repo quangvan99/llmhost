@@ -4,6 +4,8 @@ set -e
 GPU_IDS="${1:?Usage: $0 <gpu_ids> [port]  e.g.: $0 0 8890}"
 PORT="${2:-8890}"
 TENSOR_PARALLEL=$(echo "$GPU_IDS" | tr ',' '\n' | wc -l)
+GPU_TAG=$(echo "$GPU_IDS" | tr -d ',')
+CONTAINER_NAME="nemotron4b-gpu${GPU_TAG}-p${PORT}"
 
 MODEL_DIR="NVIDIA-Nemotron-3-Nano-4B-FP8"
 MODEL_ID="nvidia/NVIDIA-Nemotron-3-Nano-4B-FP8"
@@ -23,14 +25,14 @@ else
 fi
 
 # Stop and remove existing container if running
-if docker ps -a --format '{{.Names}}' | grep -q '^nemotron4b$'; then
-    echo "Removing existing container 'nemotron4b'..."
-    docker rm -f nemotron4b
+if docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
+    echo "Removing existing container '${CONTAINER_NAME}'..."
+    docker rm -f "${CONTAINER_NAME}"
 fi
 
-echo "Starting vLLM container 'nemotron4b' (GPUs: $GPU_IDS, tensor-parallel-size: $TENSOR_PARALLEL, port: $PORT)..."
+echo "Starting vLLM container '${CONTAINER_NAME}' (GPUs: $GPU_IDS, tensor-parallel-size: $TENSOR_PARALLEL, port: $PORT)..."
 docker run -d \
-    --name nemotron4b \
+    --name "${CONTAINER_NAME}" \
     --gpus "\"device=$GPU_IDS\"" \
     -v "$(pwd)/$MODEL_DIR:/$MODEL_DIR" \
     -p "$PORT:8000" \
@@ -47,4 +49,4 @@ docker run -d \
     --tool-call-parser qwen3_coder \
     --override-generation-config '{"enable_thinking": false}'
 
-echo "Container started. Logs: docker logs -f nemotron4b"
+echo "Container started. Logs: docker logs -f ${CONTAINER_NAME}"

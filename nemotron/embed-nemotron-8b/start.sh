@@ -4,6 +4,8 @@ set -e
 GPU_IDS="${1:?Usage: $0 <gpu_ids> [port]  e.g.: $0 0,1 8890}"
 PORT="${2:-8890}"
 TENSOR_PARALLEL=$(echo "$GPU_IDS" | tr ',' '\n' | wc -l)
+GPU_TAG=$(echo "$GPU_IDS" | tr -d ',')
+CONTAINER_NAME="llamaembed8b-gpu${GPU_TAG}-p${PORT}"
 
 MODEL_DIR="llama-embed-nemotron-8b"
 MODEL_ID="nvidia/llama-embed-nemotron-8b"
@@ -23,14 +25,14 @@ else
 fi
 
 # Stop and remove existing container if running
-if docker ps -a --format '{{.Names}}' | grep -q '^llamaembed8b$'; then
-    echo "Removing existing container 'llamaembed8b'..."
-    docker rm -f llamaembed8b
+if docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
+    echo "Removing existing container '${CONTAINER_NAME}'..."
+    docker rm -f "${CONTAINER_NAME}"
 fi
 
-echo "Starting vLLM container 'llamaembed8b' (GPUs: $GPU_IDS, tensor-parallel-size: $TENSOR_PARALLEL, port: $PORT)..."
+echo "Starting vLLM container '${CONTAINER_NAME}' (GPUs: $GPU_IDS, tensor-parallel-size: $TENSOR_PARALLEL, port: $PORT)..."
 docker run -d \
-    --name llamaembed8b \
+    --name "${CONTAINER_NAME}" \
     --gpus "\"device=$GPU_IDS\"" \
     -v "$(pwd)/$MODEL_DIR:/$MODEL_DIR" \
     -p "$PORT:8000" \
@@ -44,4 +46,4 @@ docker run -d \
     --gpu-memory-utilization 0.7 \
     --max-model-len 32768
 
-echo "Container started. Logs: docker logs -f llamaembed8b"
+echo "Container started. Logs: docker logs -f ${CONTAINER_NAME}"
