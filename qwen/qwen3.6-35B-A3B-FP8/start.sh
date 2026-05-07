@@ -34,5 +34,7 @@ docker run -d \
     --gpu-memory-utilization 0.85 \
     --max-model-len 16384   \
     --enable-auto-tool-choice \
-    --tool-call-parser qwen3_xml
+    --tool-call-parser qwen3_xml \
+    --reasoning-parser qwen3 \
+    --default-chat-template-kwargs '{"enable_thinking": false}'
 echo "Container started. Logs: docker logs -f qwen35b"

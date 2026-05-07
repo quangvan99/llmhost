@@ -2,3 +2,5 @@ NVIDIA-Nemotron-3-Nano-30B-A3B-FP8/
 llama-embed-nemotron-8b/
 qwen/qwen3.6-35B-A3B-FP8/Qwen3.6-35B-A3B-FP8/
 nemotron/4B-FP8/NVIDIA-Nemotron-3-Nano-4B-FP8/
+gemma/gemma-4-26B-A4B-it-bf16/gemma-4-26B-A4B-it/
+gemma/gemma-4-26B-A4B-it-FP8/gemma-4-26B-A4B-it-FP8-Dynamic/
