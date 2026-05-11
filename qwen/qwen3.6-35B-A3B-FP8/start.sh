@@ -34,7 +34,7 @@ docker run -d \
     --tensor-parallel-size "$TENSOR_PARALLEL" \
     --trust-remote-code \
     --gpu-memory-utilization 0.85 \
-    --max-model-len 16384   \
+    --max-model-len 32768   \
     --enable-auto-tool-choice \
     --tool-call-parser qwen3_xml \
     --reasoning-parser qwen3 \
